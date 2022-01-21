@@ -1,0 +1,58 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-hdd-storage
+spec:
+  storageClassName: ionos-enterprise-hdd
+  resources:
+    requests:
+      storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: whoareyou-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: whoareyou
+  template:
+    metadata:
+      labels:
+        app: whoareyou
+    spec:
+      volumes:
+      - name: pv-storage
+        persistentVolumeClaim:
+          claimName: pvc-hdd-storage
+      containers:
+        - name: whoareyou-container
+          image: containous/whoami
+          volumeMounts:
+            - mountPath: /data
+              name:  pv-storage
+              
+
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: whoareyou-service
+spec:
+  ports:
+  - name:  http
+    targetPort: 80
+    port:  80
+    protocol: TCP
+  selector:
+    app: whoareyou
+  type: LoadBalancer
